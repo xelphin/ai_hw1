@@ -77,10 +77,23 @@ class BFSAgent():
         self.OPEN = []
         self.OPEN_INFO = []
         self.CLOSE = []
+        self.d1Cell = -1
+        self.d2Cell = -1
+
+    def checkCellIsDragonball(self, cell):
+        if (cell == self.d1Cell):
+            return 1
+        if (cell == self.d2Cell):
+            return 2
+        return 0
+
 
     def search(self, env: DragonBallEnv) -> Tuple[List[int], float, int]:
         self.env = env
         self.env.reset()
+        self.d1Cell = self.env.d1[0]
+        self.d2Cell = self.env.d2[0]
+        print(f"Dragonballs at: {self.d1Cell} , {self.d2Cell}")
 
         # node <- make_node(problem.init_state, null)
         state = self.env.get_initial_state()
@@ -91,7 +104,7 @@ class BFSAgent():
         
         # OPEN <- {node}
         self.OPEN.append(state)
-        self.OPEN_INFO.append(Path_Info([],0, self.env.d1, self.env.d2))
+        self.OPEN_INFO.append(Path_Info([],0, False, False))
         # CLOSE <- {}
 
         # while OPEN is not empty do:
@@ -107,21 +120,20 @@ class BFSAgent():
             print(f"{self.expandedCount} Expanding: state {state}. Where: actions = {state_info.getActions()}, cost = {state_info.getTotalCost()} dragonballs = {state_info.getDragonBall1()},{state_info.getDragonBall2()}")
             for action, successor in env.succ(state).items():
                 # child <- make_node(s, node)
-                env.set_state(state)
-                # env.d1 = state_info.getDragonBall1() # DOESN'T WORK
-                # env.d2 = state_info.getDragonBall2() # DOESN'T WORK
+                env.set_state(state) # now on parent state
                 new_state, cost, terminated = self.env.step(action)
-                new_state_path_info = Path_Info(state_info.getActions()+ [action], state_info.getTotalCost()+cost, env.d1, env.d1)
+                new_state_cell = new_state[0]
+                new_state_path_info = Path_Info(state_info.getActions()+ [action], state_info.getTotalCost()+cost, (state_info.getDragonBall1() or self.checkCellIsDragonball(new_state_cell)==1), (state_info.getDragonBall2() or self.checkCellIsDragonball(new_state_cell)==2))
 
                 # if child.state is not in CLOSE and child is not in OPEN:
                 if new_state not in self.CLOSE and new_state not in self.OPEN and not (terminated is True and self.env.is_final_state(new_state) is False):
                     # if problem.goal(child.state) then return solution(child)
-                    if self.env.is_final_state(new_state):
+                    if self.env.is_final_state(new_state) and (new_state_path_info.getDragonBall1() == True) and (new_state_path_info.getDragonBall2() == True):
                         print(f"Found Solution: {self.expandedCount}, state {new_state}. Where: actions = {new_state_path_info.getActions()}, cost = {new_state_path_info.getTotalCost()}")
-                        print_solution(new_state_path_info.getActions(), env)
+                        # print_solution(new_state_path_info.getActions(), env)
                         return (new_state_path_info.getActions(), new_state_path_info.getTotalCost(), self.expandedCount)
                     # OPEN.insert(child)
-                    self.OPEN.append(new_state)
+                    self.OPEN.append(new_state) # NOTE: Still gives me isssue because states aren't updated properly so misunderstands who is actually in OPEN and who isn't
                     self.OPEN_INFO.append(new_state_path_info)
 
 
