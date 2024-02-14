@@ -93,7 +93,7 @@ class BFSAgent():
         self.env.reset()
         self.d1Cell = self.env.d1[0]
         self.d2Cell = self.env.d2[0]
-        print(f"Dragonballs at: {self.d1Cell} , {self.d2Cell}")
+        # print(f"Dragonballs at: {self.d1Cell} , {self.d2Cell}")
 
         # node <- make_node(problem.init_state, null)
         state = self.env.get_initial_state()
@@ -117,7 +117,7 @@ class BFSAgent():
 
             # loop for s in expand(node.state)
             self.expandedCount += 1
-            print(f"{self.expandedCount} Expanding: state {state}. Where: actions = {state_info.getActions()}, cost = {state_info.getTotalCost()} dragonballs = {state_info.getDragonBall1()},{state_info.getDragonBall2()}")
+            # print(f"{self.expandedCount} Expanding: state {state}. Where: actions = {state_info.getActions()}, cost = {state_info.getTotalCost()} dragonballs = {state_info.getDragonBall1()},{state_info.getDragonBall2()}")
             for action in range(4):
                 # child <- make_node(s, node)
                 env.reset()
@@ -126,15 +126,18 @@ class BFSAgent():
                 new_state_path_info = Path_Info(state_info.getActions()+ [action], state_info.getTotalCost()+cost, new_state[1] or state_info.getDragonBall1(), new_state[2] or state_info.getDragonBall2())
 
                 # if child.state is not in CLOSE and child is not in OPEN:
-                if new_state not in self.CLOSE and new_state not in self.OPEN and not (terminated is True and self.env.is_final_state(new_state) is False):
+                if new_state not in self.CLOSE and new_state not in self.OPEN and not (terminated is True and np.isinf(cost)):
                     # if problem.goal(child.state) then return solution(child)
                     if self.env.is_final_state(new_state) and new_state_path_info.getDragonBall1() and new_state_path_info.getDragonBall2():
-                        print(f"Found Solution: {self.expandedCount}, state {new_state}. Where: actions = {new_state_path_info.getActions()}, cost = {new_state_path_info.getTotalCost()}")
+                        # print(f"Found Solution: {self.expandedCount}, state {new_state}. Where: actions = {new_state_path_info.getActions()}, cost = {new_state_path_info.getTotalCost()}")
                         # print_solution(new_state_path_info.getActions(), env)
                         return (new_state_path_info.getActions(), new_state_path_info.getTotalCost(), self.expandedCount)
                     # OPEN.insert(child)
                     self.OPEN.append(new_state)
                     self.OPEN_INFO.append(new_state_path_info)
+
+                # else:
+                #     print(f"Not expanding: {new_state} [is hole: {(terminated is True and np.isinf(cost))}] [is in CLOSE: {new_state in self.CLOSE}] [is in OPEN: {new_state in self.OPEN}]")
 
 
         return [], -1,-1 # TODO: i don't know what to return if there isn't a solution
