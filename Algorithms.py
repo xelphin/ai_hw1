@@ -126,9 +126,9 @@ class BFSAgent():
                 new_state_path_info = Path_Info(state_info.getActions()+ [action], state_info.getTotalCost()+cost, new_state[1] or state_info.getDragonBall1(), new_state[2] or state_info.getDragonBall2())
 
                 # if child.state is not in CLOSE and child is not in OPEN:
-                if new_state not in self.CLOSE and new_state not in self.OPEN and not (terminated is True and np.isinf(cost)):
+                if new_state not in self.CLOSE and new_state not in self.OPEN and not (terminated is True and self.env.is_final_state(new_state) is False):
                     # if problem.goal(child.state) then return solution(child)
-                    if self.env.is_final_state(new_state) and new_state_path_info.getDragonBall1() and new_state_path_info.getDragonBall2():
+                    if self.env.is_final_state(new_state):
                         # print(f"Found Solution: {self.expandedCount}, state {new_state}. Where: actions = {new_state_path_info.getActions()}, cost = {new_state_path_info.getTotalCost()}")
                         # print_solution(new_state_path_info.getActions(), env)
                         return (new_state_path_info.getActions(), new_state_path_info.getTotalCost(), self.expandedCount)
@@ -137,7 +137,7 @@ class BFSAgent():
                     self.OPEN_INFO.append(new_state_path_info)
 
                 # else:
-                #     print(f"Not expanding: {new_state} [is hole: {(terminated is True and np.isinf(cost))}] [is in CLOSE: {new_state in self.CLOSE}] [is in OPEN: {new_state in self.OPEN}]")
+                #      print(f"Not expanding: {new_state} [is hole: {(terminated is True and np.isinf(cost))}] [is in CLOSE: {new_state in self.CLOSE}] [is in OPEN: {new_state in self.OPEN}]")
 
 
         return [], -1,-1 # TODO: i don't know what to return if there isn't a solution
