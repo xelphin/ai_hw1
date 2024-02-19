@@ -144,13 +144,14 @@ class WeightedAStarAgent():
         self.CLOSED = heapdict.heapdict()
 
     class Node():
-        def __init__(self, state, parentState, g_val, f_val, actions,  totalCost) -> None:
+        def __init__(self, state, parentState, g_val, f_val, actions,  totalCost, is_terminated=False) -> None:
             self.state = state
             self.parentState = parentState
             self.g_val = g_val
             self.f_val = f_val
             self.actions = actions
             self.totalCost = totalCost
+            self.is_terminated = is_terminated
 
         def get_state(self):
             return self.state
@@ -167,13 +168,8 @@ class WeightedAStarAgent():
         def get_fVal(self):
             return self.f_val
         
-        def updateValues(self, new_state, new_parentState, new_g_val, new_f_val, new_actions, new_totalCost):
-            self.state = new_state
-            self.parentState = new_parentState
-            self.g_val = new_g_val
-            self.f_val = new_f_val
-            self.actions = new_actions
-            self.totalCost = new_totalCost  
+        def get_isTerminated(self):
+            return self.is_terminated
         
     def nodeIsInHeapDict(self, state, hd):
         states_in_hd = [node.get_state() for node, f_val in hd.items()]
@@ -199,7 +195,7 @@ class WeightedAStarAgent():
         state_h = heuristic_msap(state, env)
         
         # OPEN <- make_node(P.start, NIL, h(P.start))
-        state_node = self.Node(state, None, 0, state_h, [], 0)
+        state_node = self.Node(state, None, 0, state_h, [], 0, False)
         self.OPEN[state_node] = heuristic_msap(state, env) # initially, f_val is just the heursitic (also in weighted????)
 
         # while OPEN != {}
@@ -214,8 +210,15 @@ class WeightedAStarAgent():
                 # return path (n)
                 return (state_node.get_actions(), state_node.get_totalCost(), self.expandedCount)
             
-            # for s in P.SUCC(n)
+            
+            if state_node.get_isTerminated() and state_node.get_state()[0] in [g_state[0] for g_state in env.get_goal_states()]: # TODO: check if I need this
+                continue # don't include in expanded count
             self.expandedCount += 1
+            # # print(f"{self.expandedCount} Expanding: {state}")
+            if state_node.get_isTerminated():
+                continue # don't expand from terminated
+
+            # for s in P.SUCC(n)
             for action in range(4):
                 env.reset()
                 env.set_state(state_node.get_state()) # now on parent state
@@ -225,17 +228,17 @@ class WeightedAStarAgent():
                 new_g = state_node.get_gVal()+cost
                 # new_f <-new_g + h(s)
                 new_f = (1-h_weight)*new_g + h_weight*heuristic_msap(new_state, env)
-                new_state_node = self.Node(new_state, state, new_g, new_f, state_node.get_actions()+[action], state_node.get_totalCost()+cost)
+                new_state_node = self.Node(new_state, state, new_g, new_f, state_node.get_actions()+[action], state_node.get_totalCost()+cost, terminated)
                 
                 # if s not in OPEN+CLOSED
-                if not self.nodeIsInHeapDict(new_state, self.OPEN) and not self.nodeIsInHeapDict(new_state, self.CLOSED) and not (terminated is True and self.env.is_final_state(new_state) is False):
+                if not self.nodeIsInHeapDict(new_state, self.OPEN) and not self.nodeIsInHeapDict(new_state, self.CLOSED):
                     # n' <- make_node(s,n,new_g, new_f)
                     # [new_state_node]
                     # OPEN.insert(n')
                     self.OPEN[new_state_node] = new_f
 
                 # else if s is in OPEN
-                elif self.nodeIsInHeapDict(new_state, self.OPEN) and not (terminated is True and self.env.is_final_state(new_state) is False):
+                elif self.nodeIsInHeapDict(new_state, self.OPEN):
                     # n_curr <- node in OPEN with state s
                     n_curr = self.getNodeInHeapDictUsingState(new_state, self.OPEN)
                     # if new_f < n_curr.f()
@@ -246,7 +249,7 @@ class WeightedAStarAgent():
                         self.OPEN[new_state_node] = new_f
 
                 # else if s is in CLOSED
-                elif self.nodeIsInHeapDict(new_state, self.CLOSED) and not (terminated is True and self.env.is_final_state(new_state) is False):
+                else:
                     # n_curr <- node in CLOSED with state s
                     n_curr = self.getNodeInHeapDictUsingState(new_state, self.CLOSED)
                     # if new_f < n_curr.f()
