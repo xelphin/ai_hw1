@@ -70,15 +70,19 @@ class BFSAgent():
         self.CLOSE = []
 
     class Path_Info():
-        def __init__(self, actions = [], total_cost = 0) -> None:
+        def __init__(self, actions = [], total_cost = 0, is_terminated = False) -> None:
             self.actions = actions
             self.total_cost = total_cost
+            self.is_terminated = is_terminated
 
         def getActions(self):
             return self.actions[:]
         
         def getTotalCost(self):
             return self.total_cost
+        
+        def getIsTerminated(self):
+            return self.is_terminated
 
     def search(self, env: DragonBallEnv) -> Tuple[List[int], float, int]:
         self.env = env
@@ -93,7 +97,7 @@ class BFSAgent():
         
         # OPEN <- {node}
         self.OPEN.append(state)
-        self.OPEN_INFO.append(self.Path_Info([],0))
+        self.OPEN_INFO.append(self.Path_Info([],0, False))
         # CLOSE <- {}
 
         # while OPEN is not empty do:
@@ -105,16 +109,22 @@ class BFSAgent():
             self.CLOSE.append(state)
 
             # loop for s in expand(node.state)
+            if state[0] in [g_state[0] for g_state in env.get_goal_states()]:
+                continue # don't include in expanded count
             self.expandedCount += 1
-            for action in range(4):
+            # print(f"{self.expandedCount} Expanding: {state}")
+            if state_info.getIsTerminated():
+                    continue # don't expand from terminated (old state)
+            
+            for action, (new_state, new_cost, new_terminated) in env.succ(state).items():
                 # child <- make_node(s, node)
                 env.reset()
                 env.set_state(state) # now on parent state
                 new_state, cost, terminated = self.env.step(action)
-                new_state_path_info = self.Path_Info(state_info.getActions()+ [action], state_info.getTotalCost()+cost)
+                new_state_path_info = self.Path_Info(state_info.getActions()+ [action], state_info.getTotalCost()+cost, terminated)
 
                 # if child.state is not in CLOSE and child is not in OPEN:
-                if new_state not in self.CLOSE and new_state not in self.OPEN and not (terminated is True and self.env.is_final_state(new_state) is False):
+                if new_state not in self.CLOSE and new_state not in self.OPEN:
                     # if problem.goal(child.state) then return solution(child)
                     if self.env.is_final_state(new_state):
                         return (new_state_path_info.getActions(), new_state_path_info.getTotalCost(), self.expandedCount)
