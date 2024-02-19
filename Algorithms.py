@@ -166,10 +166,138 @@ class BFSAgent():
 
 class WeightedAStarAgent():
     def __init__(self) -> None:
-        raise NotImplementedError
+        self.env = None
+        self.expandedCount = 0
+        self.OPEN = heapdict.heapdict()
+        self.CLOSED = heapdict.heapdict()
+
+    class Node():
+        def __init__(self, state, parentState, g_val, f_val, actions,  totalCost) -> None:
+            self.state = state
+            self.parentState = parentState
+            self.g_val = g_val
+            self.f_val = f_val
+            self.actions = actions
+            self.totalCost = totalCost
+
+        def get_state(self):
+            return self.state
+        
+        def get_actions(self):
+            return self.actions     
+
+        def get_totalCost(self):
+            return self.totalCost  
+
+        def get_gVal(self):
+            return self.g_val
+        
+        def get_fVal(self):
+            return self.f_val
+        
+        def updateValues(self, new_state, new_parentState, new_g_val, new_f_val, new_actions, new_totalCost):
+            self.state = new_state
+            self.parentState = new_parentState
+            self.g_val = new_g_val
+            self.f_val = new_f_val
+            self.actions = new_actions
+            self.totalCost = new_totalCost  
+        
+    def nodeIsInHeapDict(self, state, hd):
+        states_in_hd = [node.get_state() for node, f_val in hd.items()]
+        return (state in states_in_hd)
+    
+    def getNodeInHeapDictUsingState(self, state, hd):
+        for node, f_val in hd.items():
+            if node.get_state() == state:
+                return node
+        return None
+    
+    def removeNodeFromHeapDict(self, node, hd):
+        for k,v in hd.items():
+            if k==node:
+                hd.pop(k)
+                return
+
 
     def search(self, env: DragonBallEnv, h_weight) -> Tuple[List[int], float, int]:
-        raise NotImplementedError
+        self.env = env
+        self.env.reset()
+        state = self.env.get_initial_state()
+        state_h = heuristic_msap(state, env)
+        
+        # OPEN <- make_node(P.start, NIL, h(P.start))
+        state_node = self.Node(state, None, 0, state_h, [], 0)
+        self.OPEN[state_node] = heuristic_msap(state, env) # initially, f_val is just the heursitic (also in weighted????)
+
+        # while OPEN != {}
+        while len(self.OPEN) != 0:
+            # n <- OPEN.pop_min
+            state_node, state_f_val = self.OPEN.popitem()
+            # CLOSED <- CLOSED + {n}
+            self.CLOSED[state_node] = state_node.get_fVal()
+
+            # if P.goal_test(n)
+            if self.env.is_final_state(state_node.get_state()):
+                # return path (n)
+                return (state_node.get_actions(), state_node.get_totalCost(), self.expandedCount)
+            
+            # for s in P.SUCC(n)
+            self.expandedCount += 1
+            for action in range(4):
+                env.reset()
+                env.set_state(state_node.get_state()) # now on parent state
+                new_state, cost, terminated = self.env.step(action)
+
+                # new_g <-n.g() + P.COST(n.s,s)
+                new_g = state_node.get_gVal()+cost
+                # new_f <-new_g + h(s)
+                new_f = (1-h_weight)*new_g + h_weight*heuristic_msap(new_state, env)
+                new_state_node = self.Node(new_state, state, new_g, new_f, state_node.get_actions()+[action], state_node.get_totalCost()+cost)
+                
+                # if s not in OPEN+CLOSED
+                if not self.nodeIsInHeapDict(new_state, self.OPEN) and not self.nodeIsInHeapDict(new_state, self.CLOSED) and not (terminated is True and self.env.is_final_state(new_state) is False):
+                    # n' <- make_node(s,n,new_g, new_f)
+                    # [new_state_node]
+                    # OPEN.insert(n')
+                    self.OPEN[new_state_node] = new_f
+
+                # else if s is in OPEN
+                elif self.nodeIsInHeapDict(new_state, self.OPEN) and not (terminated is True and self.env.is_final_state(new_state) is False):
+                    # n_curr <- node in OPEN with state s
+                    n_curr = self.getNodeInHeapDictUsingState(new_state, self.OPEN)
+                    # if new_f < n_curr.f()
+                    if new_f < n_curr.get_fVal():
+                        # n_curr <- update_node(s,n,new_g,new_f)
+                        # OPEN.update_key(n_curr)
+                        self.removeNodeFromHeapDict(n_curr, self.OPEN)
+                        self.OPEN[new_state_node] = new_f
+
+                # else if s is in CLOSED
+                elif self.nodeIsInHeapDict(new_state, self.CLOSED) and not (terminated is True and self.env.is_final_state(new_state) is False):
+                    # n_curr <- node in CLOSED with state s
+                    n_curr = self.getNodeInHeapDictUsingState(new_state, self.CLOSED)
+                    # if new_f < n_curr.f()
+                    if new_f < n_curr.get_fVal():
+                        # n_curr <- update_node(s,n,new_g,new_f)
+                        # OPEN.insert(n_curr)
+                        self.OPEN[new_state_node] = new_f
+                        # CLOSED.remove(n_curr)
+                        self.removeNodeFromHeapDict(n_curr, self.CLOSED)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
