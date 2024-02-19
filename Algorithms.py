@@ -37,22 +37,7 @@ def print_solution(actions,env: DragonBallEnv) -> None:
 
 # HELPER
       
-class Path_Info():
-    def __init__(self, actions = [], total_cost = 0) -> None:
-        self.actions = actions
-        self.total_cost = total_cost
 
-    def addAction(self, action):
-        self.actions.append(action)
-
-    def addToTotalCost(self, total_cost):
-        self.total_cost += total_cost
-
-    def getActions(self):
-        return self.actions[:]
-    
-    def getTotalCost(self):
-        return self.total_cost
     
 
 
@@ -84,6 +69,17 @@ class BFSAgent():
         self.OPEN_INFO = []
         self.CLOSE = []
 
+    class Path_Info():
+        def __init__(self, actions = [], total_cost = 0) -> None:
+            self.actions = actions
+            self.total_cost = total_cost
+
+        def getActions(self):
+            return self.actions[:]
+        
+        def getTotalCost(self):
+            return self.total_cost
+
     def search(self, env: DragonBallEnv) -> Tuple[List[int], float, int]:
         self.env = env
         self.env.reset()
@@ -97,7 +93,7 @@ class BFSAgent():
         
         # OPEN <- {node}
         self.OPEN.append(state)
-        self.OPEN_INFO.append(Path_Info([],0))
+        self.OPEN_INFO.append(self.Path_Info([],0))
         # CLOSE <- {}
 
         # while OPEN is not empty do:
@@ -115,7 +111,7 @@ class BFSAgent():
                 env.reset()
                 env.set_state(state) # now on parent state
                 new_state, cost, terminated = self.env.step(action)
-                new_state_path_info = Path_Info(state_info.getActions()+ [action], state_info.getTotalCost()+cost)
+                new_state_path_info = self.Path_Info(state_info.getActions()+ [action], state_info.getTotalCost()+cost)
 
                 # if child.state is not in CLOSE and child is not in OPEN:
                 if new_state not in self.CLOSE and new_state not in self.OPEN and not (terminated is True and self.env.is_final_state(new_state) is False):
