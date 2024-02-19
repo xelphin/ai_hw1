@@ -68,6 +68,26 @@ class Path_Info():
     def getDragonBall2(self):
         return self.d2
 
+
+
+# TODO check this
+def heuristic_msap(s,env):
+    g_states = env.get_goal_states()
+
+    # find min manhatan distance
+    s_row = env.to_row_col(s)[0]
+    s_col = env.to_row_col(s)[1]
+    min_dist = np.inf
+
+    for g_state in g_states:
+        g_row = env.to_row_col(g_state)[0]
+        g_col = env.to_row_col(g_state)[1]
+        dist = abs(s_row-g_row)+abs(s_col-g_col)
+        min_dist = min(min_dist, dist)
+
+    return min_dist
+
+
 # ALGORITHMS
 
 class BFSAgent():
