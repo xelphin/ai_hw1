@@ -108,9 +108,6 @@ class BFSAgent():
             # CLOSE.add(node.state)
             self.CLOSE.append(state)
 
-            # loop for s in expand(node.state)
-            if state[0] in [g_state[0] for g_state in env.get_goal_states()]:
-                continue # don't include in expanded count
             self.expandedCount += 1
             # print(f"{self.expandedCount} Expanding: {state}")
             if state_info.getIsTerminated():
@@ -210,9 +207,6 @@ class WeightedAStarAgent():
                 # return path (n)
                 return (state_node.get_actions(), state_node.get_totalCost(), self.expandedCount)
             
-            
-            if state_node.get_isTerminated() and state_node.get_state()[0] in [g_state[0] for g_state in env.get_goal_states()]: # TODO: check if I need this
-                continue # don't include in expanded count
             self.expandedCount += 1
             # # print(f"{self.expandedCount} Expanding: {state}")
             if state_node.get_isTerminated():
