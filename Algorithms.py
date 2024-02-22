@@ -192,8 +192,8 @@ class WeightedAStarAgent():
         state_h = heuristic_msap(state, env)
         
         # OPEN <- make_node(P.start, NIL, h(P.start))
-        state_node = self.Node(state, None, 0, state_h, [], 0, False)
-        self.OPEN[state_node] = heuristic_msap(state, env) # initially, f_val is just the heursitic (also in weighted????)
+        state_node = self.Node(state, None, 0, h_weight*state_h, [], 0, False)
+        self.OPEN[state_node] = h_weight*heuristic_msap(state, env)
 
         # while OPEN != {}
         while len(self.OPEN) != 0:
@@ -208,7 +208,7 @@ class WeightedAStarAgent():
                 return (state_node.get_actions(), state_node.get_totalCost(), self.expandedCount)
             
             self.expandedCount += 1
-            # # print(f"{self.expandedCount} Expanding: {state}")
+            # print(f"{self.expandedCount} Expanding: {state_node.get_state()} f_val: {state_node.get_fVal()}")
             if state_node.get_isTerminated():
                 continue # don't expand from terminated
 
@@ -230,6 +230,7 @@ class WeightedAStarAgent():
                     # [new_state_node]
                     # OPEN.insert(n')
                     self.OPEN[new_state_node] = new_f
+                    # print(f"state {new_state_node.get_state()} not in OPEN+CLOSED, adding a new state. f_val: {new_state_node.get_fVal()}")
 
                 # else if s is in OPEN
                 elif self.nodeIsInHeapDict(new_state, self.OPEN):
@@ -241,6 +242,7 @@ class WeightedAStarAgent():
                         # OPEN.update_key(n_curr)
                         self.removeNodeFromHeapDict(n_curr, self.OPEN)
                         self.OPEN[new_state_node] = new_f
+                        # print(f"state {new_state_node.get_state()} in OPEN, updating the state. f_val: {new_state_node.get_fVal()}")
 
                 # else if s is in CLOSED
                 else:
@@ -253,6 +255,7 @@ class WeightedAStarAgent():
                         self.OPEN[new_state_node] = new_f
                         # CLOSED.remove(n_curr)
                         self.removeNodeFromHeapDict(n_curr, self.CLOSED)
+                        # print(f"state {new_state_node.get_state()} in CLOSED, putting back in OPEN with updated value. f_val: {new_state_node.get_fVal()}")
 
 
 
