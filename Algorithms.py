@@ -195,14 +195,14 @@ class WeightedAStarAgent():
         
         # OPEN <- make_node(P.start, NIL, h(P.start))
         state_node = self.Node(state, None, 0, h_weight*state_h, [], 0, False)
-        self.OPEN[state_node] = h_weight*state_h
+        self.OPEN[state_node] = (h_weight*state_h, 0)
 
         # while OPEN != {}
         while len(self.OPEN) != 0:
             # n <- OPEN.pop_min
             state_node, state_f_val = self.OPEN.popitem()
             # CLOSED <- CLOSED + {n}
-            self.CLOSED[state_node] = state_node.get_fVal()
+            self.CLOSED[state_node] = (state_node.get_fVal(), state_node.get_state()[0])
 
             # if P.goal_test(n)
             if self.env.is_final_state(state_node.get_state()):
@@ -232,7 +232,7 @@ class WeightedAStarAgent():
                     # n' <- make_node(s,n,new_g, new_f)
                     # [new_state_node]
                     # OPEN.insert(n')
-                    self.OPEN[new_state_node] = new_f
+                    self.OPEN[new_state_node] = (new_f, state_node.get_state()[0])
                     #print(f"state {new_state_node.get_state()} not in OPEN+CLOSED, adding a new state. f_val: {new_state_node.get_fVal()}")
 
                 # else if s is in OPEN
@@ -244,7 +244,7 @@ class WeightedAStarAgent():
                         # n_curr <- update_node(s,n,new_g,new_f)
                         # OPEN.update_key(n_curr)
                         self.removeNodeFromHeapDict(n_curr, self.OPEN)
-                        self.OPEN[new_state_node] = new_f
+                        self.OPEN[new_state_node] = (new_f, state_node.get_state()[0])
                         #print(f"state {new_state_node.get_state()} in OPEN, updating the state. f_val: {new_state_node.get_fVal()}")
                     #else:
                         #print(f"state {new_state_node.get_state()} in OPEN, IGNORING because f_val: {new_state_node.get_fVal()} didn't improve old_f_val {n_curr.get_fVal()}")
@@ -257,7 +257,7 @@ class WeightedAStarAgent():
                     if new_f < n_curr.get_fVal():
                         # n_curr <- update_node(s,n,new_g,new_f)
                         # OPEN.insert(n_curr)
-                        self.OPEN[new_state_node] = new_f
+                        self.OPEN[new_state_node] = (new_f, state_node.get_state()[0])
                         # CLOSED.remove(n_curr)
                         self.removeNodeFromHeapDict(n_curr, self.CLOSED)
                         #print(f"state {new_state_node.get_state()} in CLOSED, putting back in OPEN with updated value. f_val: {new_state_node.get_fVal()}")
