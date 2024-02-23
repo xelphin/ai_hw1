@@ -38,21 +38,23 @@ def print_solution(actions,env: DragonBallEnv) -> None:
 # HELPER
       
 
-    
-
-
-# TODO check this
 def heuristic_msap(s,env):
-    g_states = env.get_goal_states()
+    g_d_states = env.get_goal_states()[:]
+    if s[1] == False:
+        # didn't collect d1
+        g_d_states += [env.d1]
+    if s[2] == False:
+        # didn't collect d2
+        g_d_states += [env.d2]
 
     # find min manhatan distance
     s_row = env.to_row_col(s)[0]
     s_col = env.to_row_col(s)[1]
     min_dist = np.inf
 
-    for g_state in g_states:
-        g_row = env.to_row_col(g_state)[0]
-        g_col = env.to_row_col(g_state)[1]
+    for g_d_state in g_d_states:
+        g_row = env.to_row_col(g_d_state)[0]
+        g_col = env.to_row_col(g_d_state)[1]
         dist = abs(s_row-g_row)+abs(s_col-g_col)
         min_dist = min(min_dist, dist)
 
@@ -193,7 +195,7 @@ class WeightedAStarAgent():
         
         # OPEN <- make_node(P.start, NIL, h(P.start))
         state_node = self.Node(state, None, 0, h_weight*state_h, [], 0, False)
-        self.OPEN[state_node] = h_weight*heuristic_msap(state, env)
+        self.OPEN[state_node] = h_weight*state_h
 
         # while OPEN != {}
         while len(self.OPEN) != 0:
@@ -208,8 +210,9 @@ class WeightedAStarAgent():
                 return (state_node.get_actions(), state_node.get_totalCost(), self.expandedCount)
             
             self.expandedCount += 1
-            # print(f"{self.expandedCount} Expanding: {state_node.get_state()} f_val: {state_node.get_fVal()}")
+            #print(f"{self.expandedCount} Expanding: {state_node.get_state()} f_val: {state_node.get_fVal()}")
             if state_node.get_isTerminated():
+                #print(f"stopped expansion because terminated.")
                 continue # don't expand from terminated
 
             # for s in P.SUCC(n)
@@ -230,7 +233,7 @@ class WeightedAStarAgent():
                     # [new_state_node]
                     # OPEN.insert(n')
                     self.OPEN[new_state_node] = new_f
-                    # print(f"state {new_state_node.get_state()} not in OPEN+CLOSED, adding a new state. f_val: {new_state_node.get_fVal()}")
+                    #print(f"state {new_state_node.get_state()} not in OPEN+CLOSED, adding a new state. f_val: {new_state_node.get_fVal()}")
 
                 # else if s is in OPEN
                 elif self.nodeIsInHeapDict(new_state, self.OPEN):
@@ -242,7 +245,9 @@ class WeightedAStarAgent():
                         # OPEN.update_key(n_curr)
                         self.removeNodeFromHeapDict(n_curr, self.OPEN)
                         self.OPEN[new_state_node] = new_f
-                        # print(f"state {new_state_node.get_state()} in OPEN, updating the state. f_val: {new_state_node.get_fVal()}")
+                        #print(f"state {new_state_node.get_state()} in OPEN, updating the state. f_val: {new_state_node.get_fVal()}")
+                    #else:
+                        #print(f"state {new_state_node.get_state()} in OPEN, IGNORING because f_val: {new_state_node.get_fVal()} didn't improve old_f_val {n_curr.get_fVal()}")
 
                 # else if s is in CLOSED
                 else:
@@ -255,7 +260,12 @@ class WeightedAStarAgent():
                         self.OPEN[new_state_node] = new_f
                         # CLOSED.remove(n_curr)
                         self.removeNodeFromHeapDict(n_curr, self.CLOSED)
-                        # print(f"state {new_state_node.get_state()} in CLOSED, putting back in OPEN with updated value. f_val: {new_state_node.get_fVal()}")
+                        #print(f"state {new_state_node.get_state()} in CLOSED, putting back in OPEN with updated value. f_val: {new_state_node.get_fVal()}")
+                    #else:
+                    #    print(f"state {new_state_node.get_state()} in CLOSED, IGNORING because f_val: {new_state_node.get_fVal()} didn't improve old_f_val {n_curr.get_fVal()}")
+
+                
+            #print(f"OPEN is now: {[(open_state_node.get_state(), open_state_node.get_fVal()) for open_state_node in self.OPEN]}")
 
 
 
