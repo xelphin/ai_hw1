@@ -85,8 +85,16 @@ class BFSAgent():
         
         def getIsTerminated(self):
             return self.is_terminated
+        
+    def resetAllAgentValues(self):
+        self.env = None
+        self.expandedCount = 0
+        self.OPEN = []
+        self.OPEN_INFO = []
+        self.CLOSE = []
 
     def search(self, env: DragonBallEnv) -> Tuple[List[int], float, int]:
+        self.resetAllAgentValues()
         self.env = env
         self.env.reset()
 
@@ -186,8 +194,14 @@ class WeightedAStarAgent():
                 hd.pop(k)
                 return
 
+    def resetAllAgentValues(self):
+        self.env = None
+        self.expandedCount = 0
+        self.OPEN = heapdict.heapdict()
+        self.CLOSED = heapdict.heapdict()
 
     def search(self, env: DragonBallEnv, h_weight) -> Tuple[List[int], float, int]:
+        self.resetAllAgentValues()
         self.env = env
         self.env.reset()
         state = self.env.get_initial_state()
