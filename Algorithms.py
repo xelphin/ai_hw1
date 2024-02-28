@@ -283,23 +283,190 @@ class WeightedAStarAgent():
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class AStarEpsilonAgent():
     def __init__(self) -> None:
-        raise NotImplementedError
+                self.env = None
+                self.OPEN = heapdict.heapdict() # for f value
+                self.CLOSED = heapdict.heapdict() # for comfort
+                self.expandedCount = 0
+                self.FOCAL = heapdict.heapdict() # for g(v)
+    class Node():
+            def __init__(self, state, parentState, g_val, f_val, actions,  totalCost, is_terminated=False) -> None:
+                    self.state = state
+                    self.parentState = parentState
+                    self.g_val = g_val
+                    self.f_val = f_val
+                    self.actions = actions
+                    self.totalCost = totalCost
+                    self.is_terminated = is_terminated
+
+            def get_state(self):
+                    return self.state
+                
+            def get_actions(self):
+                    return self.actions     
+
+            def get_totalCost(self):
+                    return self.totalCost  
+
+            def get_gVal(self):
+                    return self.g_val
+                
+            def get_fVal(self):
+                    return self.f_val
+                
+            def get_isTerminated(self):
+                    return self.is_terminated
+                
+    def nodeIsInHeapDict(self, state, hd):
+        states_in_hd = [node.get_state() for node, f_val in hd.items()]
+        return (state in states_in_hd)
+    
+    def getNodeInHeapDictUsingState(self, state, hd):
+        for node, f_val in hd.items():
+            if node.get_state() == state:
+                return node
+        return None
+    
+    def removeNodeFromHeapDict(self, node, hd):
+        for k,v in hd.items():
+            if k==node:
+                hd.pop(k)
+                return
+
+    def resetAllAgentValues(self):
+        self.env = None
+        self.expandedCount = 0
+        self.OPEN = heapdict.heapdict()
+        self.CLOSED = heapdict.heapdict()
+        self.FOCAL = heapdict.heapdict()
+    
+    def updateFocal(self, newF, trim, epsilon):
+        # newf - new value of f will affect who enters focal list
+        # trim - true - a lesser min was entered and the focal list will need to be trimmed. 
+        # - false - the lowest f was removed so we need to add bigger f nodes from open
+        # epsilon - provided by the user
+
+         
+        if trim: # if lower f was found:
+            for node, f_val in self.FOCAL.items():
+                if node.get_fVal() > newF*epsilon:
+                    self.removeNodeFromHeapDict(node, self.FOCAL)
         
-    def ssearch(self, env: DragonBallEnv, epsilon: int) -> Tuple[List[int], float, int]:
-        raise NotImplementedError
+        else: # lowest f was removed => new larger f is now the min => open can have new focal-worthy nodes
+            states_in_focal = [node.get_state() for node, f_val in self.FOCAL.items()]
+            for node, f_val in self.OPEN.items():
+                if not node.get_state() in states_in_focal:
+                    if node.get_fVal() <= newF*epsilon:
+                        self.FOCAL[node] = (node.get_gVal(), node.get_state()[0])
+                      
+    def search(self, env: DragonBallEnv, epsilon: int) -> Tuple[List[int], float, int]:
+        #recieve enviroment, epsilon, return (actions, cost, expanded)
+        self.resetAllAgentValues()
+        self.env = env
+        self.env.reset()
+        state = self.env.get_initial_state()
+        state_h = heuristic_msap(state, env)
+
+        state_node = self.Node(state, None, 0,state_h, [], 0, False)
+        self.OPEN[state_node] = (state_h, 0) #f(v), index
+        self.FOCAL[state_node] = (0, 0) # g(v), index
+
+        while len(self.OPEN) != 0:
+           
+            state_node, state_f_val = self.FOCAL.popitem() # because we need minimum g(v) 
+            #self.CLOSED[state_node] = (state_node.get_fVal(), state_node.get_state()[0])
+            #F_limit = state_node.get_fVal()*epsilon
+
+            self.CLOSED[state_node] = (state_node.get_fVal(), state_node.get_state()[0])
+            self.removeNodeFromHeapDict(state_node, self.OPEN)
+
+            if self.env.is_final_state(state_node.get_state()):
+                return (state_node.get_actions(), state_node.get_totalCost(), self.expandedCount)
+            
+            self.expandedCount += 1    
+            if state_node.get_isTerminated():
+                #TODO - Compare the f(v) of the hole to the minimal f(v) of the open list (not necessarily the same)
+                # if it is the same - we need to find the next min f - we enlarge the min, 
+                # so everything in focal needs to stay, and there could be more 
+                # who should join focal
+
+                minf_node, minf_val = self.OPEN.peekitem()
+                if state_node.get_fVal()< minf_node.get_fVal():
+                    self.updateFocal(state_node.get_fVal(), False, epsilon)
+
+                continue # don't expand from terminated
+
+            for action in range(4):
+                env.reset()
+                env.set_state(state_node.get_state()) # now on parent state
+                new_state, cost, terminated = self.env.step(action)
+
+                new_g = state_node.get_gVal()+cost
+                new_f = new_g + heuristic_msap(new_state, env)
+                new_state_node = self.Node(new_state, state, new_g, new_f, state_node.get_actions()+[action], state_node.get_totalCost()+cost, terminated)
+
+                # if s not in OPEN+CLOSED - new node
+                if not self.nodeIsInHeapDict(new_state, self.OPEN) and not self.nodeIsInHeapDict(new_state, self.CLOSED):
+                    self.OPEN[new_state_node] = (new_f, new_state_node.get_state()[0])
+                    minf_node, minf_val = self.OPEN.peekitem()
+                    if new_state_node.get_fVal()< minf_node.get_fVal()*epsilon:
+                        self.FOCAL[new_state_node] = (new_g,new_state_node.get_state()[0])
+                        if new_state_node.get_fVal()< minf_node.get_fVal():
+                            self.updateFocal(new_state_node.get_fVal(), True, epsilon) # better f_val means trim focal
+                    
+                    
+
+
+                # else if s is in OPEN
+                elif self.nodeIsInHeapDict(new_state, self.OPEN):
+
+                    n_curr = self.getNodeInHeapDictUsingState(new_state, self.OPEN)
+
+                    if new_f < n_curr.get_fVal():
+
+                        self.removeNodeFromHeapDict(n_curr, self.OPEN)
+                        self.OPEN[new_state_node] = (new_f, new_state_node.get_state()[0])
+                        if self.nodeIsInHeapDict(n_curr, self.FOCAL):
+                            self.removeNodeFromHeapDict(n_curr, self.FOCAL)
+
+                        minf_node, minf_val = self.OPEN.peekitem()
+                        if new_state_node.get_fVal()< minf_node.get_fVal()*epsilon:
+                            self.FOCAL[new_state_node] = (new_g,new_state_node.get_state()[0])
+                            if new_state_node.get_fVal()< minf_node.get_fVal():
+                                self.updateFocal(new_state_node.get_fVal(), True, epsilon) # better f_val means trim focal
+
+                # else if s is in CLOSED
+                else:
+
+                    n_curr = self.getNodeInHeapDictUsingState(new_state, self.CLOSED)
+
+                    if new_f < n_curr.get_fVal():
+
+                        self.OPEN[new_state_node] = (new_f, new_state_node.get_state()[0])
+
+                        self.removeNodeFromHeapDict(n_curr, self.CLOSED)
+
+                        minf_node, minf_val = self.OPEN.peekitem()
+                        if new_state_node.get_fVal()< minf_node.get_fVal()*epsilon:
+                            self.FOCAL[new_state_node] = (new_g,new_state_node.get_state()[0])
+                            if new_state_node.get_fVal()< minf_node.get_fVal():
+                                self.updateFocal(new_state_node.get_fVal(), True, epsilon) # better f_val means trim focal
+            
+            minf_node, minf_val = self.OPEN.peekitem()
+            if state_node.get_fVal()< minf_node.get_fVal():
+                # we finished with the min f state so someone else needs to take the throne
+                self.updateFocal(minf_node.get_fVal(), False, epsilon) # we finished with the state 
+                
+
+
+
+                
+            
+
+
+
+
+
+
+
