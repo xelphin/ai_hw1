@@ -139,7 +139,7 @@ class BFSAgent():
                     self.OPEN.append(new_state)
                     self.OPEN_INFO.append(new_state_path_info)
 
-        return [], -1,-1 # TODO: i don't know what to return if there isn't a solution
+        return [], 0,0
 
 
 
@@ -224,9 +224,9 @@ class WeightedAStarAgent():
                 return (state_node.get_actions(), state_node.get_totalCost(), self.expandedCount)
             
             self.expandedCount += 1
-            #print(f"{self.expandedCount} Expanding: {state_node.get_state()} f_val: {state_node.get_fVal()}")
+            # print(f"{self.expandedCount} Expanding: {state_node.get_state()} f_val: {state_node.get_fVal()}")
             if state_node.get_isTerminated():
-                #print(f"stopped expansion because terminated.")
+                # print(f"stopped expansion because terminated.")
                 continue # don't expand from terminated
 
             # for s in P.SUCC(n)
@@ -238,7 +238,7 @@ class WeightedAStarAgent():
                 # new_g <-n.g() + P.COST(n.s,s)
                 new_g = state_node.get_gVal()+cost
                 # new_f <-new_g + h(s)
-                new_f = (1-h_weight)*new_g + h_weight*heuristic_msap(new_state, env)
+                new_f = round((1-h_weight)*new_g + h_weight*heuristic_msap(new_state, env), 2)
                 new_state_node = self.Node(new_state, state, new_g, new_f, state_node.get_actions()+[action], state_node.get_totalCost()+cost, terminated)
                 
                 # if s not in OPEN+CLOSED
@@ -246,8 +246,8 @@ class WeightedAStarAgent():
                     # n' <- make_node(s,n,new_g, new_f)
                     # [new_state_node]
                     # OPEN.insert(n')
-                    self.OPEN[new_state_node] = (new_f, state_node.get_state()[0])
-                    #print(f"state {new_state_node.get_state()} not in OPEN+CLOSED, adding a new state. f_val: {new_state_node.get_fVal()}")
+                    self.OPEN[new_state_node] = (new_f, new_state)
+                    # print(f"state {new_state_node.get_state()} not in OPEN+CLOSED, adding a new state. f_val: {new_state_node.get_fVal()} ( g_val: {new_state_node.get_gVal()} h_val: {heuristic_msap(new_state, env)} )  terminated: {new_state_node.get_isTerminated()}")
 
                 # else if s is in OPEN
                 elif self.nodeIsInHeapDict(new_state, self.OPEN):
@@ -258,10 +258,10 @@ class WeightedAStarAgent():
                         # n_curr <- update_node(s,n,new_g,new_f)
                         # OPEN.update_key(n_curr)
                         self.removeNodeFromHeapDict(n_curr, self.OPEN)
-                        self.OPEN[new_state_node] = (new_f, state_node.get_state()[0])
-                        #print(f"state {new_state_node.get_state()} in OPEN, updating the state. f_val: {new_state_node.get_fVal()}")
-                    #else:
-                        #print(f"state {new_state_node.get_state()} in OPEN, IGNORING because f_val: {new_state_node.get_fVal()} didn't improve old_f_val {n_curr.get_fVal()}")
+                        self.OPEN[new_state_node] = (new_f, new_state)
+                    #     print(f"state {new_state_node.get_state()} in OPEN, updating the state. f_val: {new_state_node.get_fVal()}")
+                    # else:
+                    #     print(f"state {new_state_node.get_state()} in OPEN, IGNORING because f_val: {new_state_node.get_fVal()} didn't improve old_f_val {n_curr.get_fVal()}")
 
                 # else if s is in CLOSED
                 else:
@@ -271,15 +271,15 @@ class WeightedAStarAgent():
                     if new_f < n_curr.get_fVal():
                         # n_curr <- update_node(s,n,new_g,new_f)
                         # OPEN.insert(n_curr)
-                        self.OPEN[new_state_node] = (new_f, state_node.get_state()[0])
+                        self.OPEN[new_state_node] = (new_f, new_state)
                         # CLOSED.remove(n_curr)
                         self.removeNodeFromHeapDict(n_curr, self.CLOSED)
-                        #print(f"state {new_state_node.get_state()} in CLOSED, putting back in OPEN with updated value. f_val: {new_state_node.get_fVal()}")
-                    #else:
-                    #    print(f"state {new_state_node.get_state()} in CLOSED, IGNORING because f_val: {new_state_node.get_fVal()} didn't improve old_f_val {n_curr.get_fVal()}")
+                    #     print(f"state {new_state_node.get_state()} in CLOSED, putting back in OPEN with updated value. f_val: {new_state_node.get_fVal()}")
+                    # else:
+                    #     print(f"state {new_state_node.get_state()} in CLOSED, IGNORING because f_val: {new_state_node.get_fVal()} didn't improve old_f_val {n_curr.get_fVal()}")
 
                 
-            #print(f"OPEN is now: {[(open_state_node.get_state(), open_state_node.get_fVal()) for open_state_node in self.OPEN]}")
+            #  print(f"OPEN is now: {[(open_state_node.get_state(), open_state_node.get_fVal()) for open_state_node in self.OPEN]}")
         return ([],0,0)
 
 
