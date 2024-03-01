@@ -341,12 +341,19 @@ class AStarEpsilonAgent():
         self.CLOSED = heapdict.heapdict()
         self.FOCAL = heapdict.heapdict()
     
+    def printnode(self, node):
+         print("({},{},{}) - F(v)={}, g(v)={}\n".format(node.get_state()[0],node.get_state()[1],node.get_state()[2], node.get_fVal(), node.get_gVal()))
+
     def updateFocal(self, newF, trim, epsilon):
         # newf - new value of f will affect who enters focal list
         # trim - true - a lesser min was entered and the focal list will need to be trimmed. 
         # - false - the lowest f was removed so we need to add bigger f nodes from open
         # epsilon - provided by the user
-
+        
+        #if len(self.FOCAL)==0:
+                #print("\nparams: newf:{}, trim:{}, epsilon:{}\n".format({newF}, {trim},{epsilon}))
+                #for node, f_val in self.OPEN.items():
+                    #print("({},{},{}) - F(v)={}\n".format(node.get_state()[0],node.get_state()[1],node.get_state()[2], node.get_fVal()))
          
         if trim: # if lower f was found:
             for node, f_val in self.FOCAL.items():
@@ -362,6 +369,7 @@ class AStarEpsilonAgent():
                       
     def search(self, env: DragonBallEnv, epsilon: int) -> Tuple[List[int], float, int]:
         #recieve enviroment, epsilon, return (actions, cost, expanded)
+        nepsilon=epsilon+1
         self.resetAllAgentValues()
         self.env = env
         self.env.reset()
@@ -373,13 +381,16 @@ class AStarEpsilonAgent():
         self.FOCAL[state_node] = (0, 0) # g(v), index
 
         while len(self.OPEN) != 0:
-           
+            if len(self.FOCAL)==0:
+                print("\noof\n")
             state_node, state_f_val = self.FOCAL.popitem() # because we need minimum g(v) 
             #self.CLOSED[state_node] = (state_node.get_fVal(), state_node.get_state()[0])
             #F_limit = state_node.get_fVal()*epsilon
 
             self.CLOSED[state_node] = (state_node.get_fVal(), state_node.get_state()[0])
-            self.removeNodeFromHeapDict(state_node, self.OPEN)
+
+            nodet = self.getNodeInHeapDictUsingState(state_node.get_state(),self.OPEN)
+            self.removeNodeFromHeapDict(nodet, self.OPEN)
 
             if self.env.is_final_state(state_node.get_state()):
                 return (state_node.get_actions(), state_node.get_totalCost(), self.expandedCount)
@@ -393,7 +404,7 @@ class AStarEpsilonAgent():
 
                 minf_node, minf_val = self.OPEN.peekitem()
                 if state_node.get_fVal()< minf_node.get_fVal():
-                    self.updateFocal(state_node.get_fVal(), False, epsilon)
+                    self.updateFocal(state_node.get_fVal(), False, nepsilon)
 
                 continue # don't expand from terminated
 
@@ -410,31 +421,35 @@ class AStarEpsilonAgent():
                 if not self.nodeIsInHeapDict(new_state, self.OPEN) and not self.nodeIsInHeapDict(new_state, self.CLOSED):
                     self.OPEN[new_state_node] = (new_f, new_state_node.get_state()[0])
                     minf_node, minf_val = self.OPEN.peekitem()
-                    if new_state_node.get_fVal()< minf_node.get_fVal()*epsilon:
+                    if new_state_node.get_fVal()< minf_node.get_fVal()*nepsilon:
                         self.FOCAL[new_state_node] = (new_g,new_state_node.get_state()[0])
                         if new_state_node.get_fVal()< minf_node.get_fVal():
-                            self.updateFocal(new_state_node.get_fVal(), True, epsilon) # better f_val means trim focal
+                            self.updateFocal(new_state_node.get_fVal(), True, nepsilon) # better f_val means trim focal
                     
                     
 
 
                 # else if s is in OPEN
                 elif self.nodeIsInHeapDict(new_state, self.OPEN):
+                    
 
                     n_curr = self.getNodeInHeapDictUsingState(new_state, self.OPEN)
+                    n_currf = self.getNodeInHeapDictUsingState(new_state, self.FOCAL)
 
                     if new_f < n_curr.get_fVal():
-
                         self.removeNodeFromHeapDict(n_curr, self.OPEN)
                         self.OPEN[new_state_node] = (new_f, new_state_node.get_state()[0])
-                        if self.nodeIsInHeapDict(n_curr, self.FOCAL):
-                            self.removeNodeFromHeapDict(n_curr, self.FOCAL)
+
+
+
+                        if n_currf!=None:
+                            self.removeNodeFromHeapDict(n_currf, self.FOCAL)
 
                         minf_node, minf_val = self.OPEN.peekitem()
-                        if new_state_node.get_fVal()< minf_node.get_fVal()*epsilon:
+                        if new_state_node.get_fVal()< minf_node.get_fVal()*nepsilon:
                             self.FOCAL[new_state_node] = (new_g,new_state_node.get_state()[0])
                             if new_state_node.get_fVal()< minf_node.get_fVal():
-                                self.updateFocal(new_state_node.get_fVal(), True, epsilon) # better f_val means trim focal
+                                self.updateFocal(new_state_node.get_fVal(), True, nepsilon) # better f_val means trim focal
 
                 # else if s is in CLOSED
                 else:
@@ -448,15 +463,40 @@ class AStarEpsilonAgent():
                         self.removeNodeFromHeapDict(n_curr, self.CLOSED)
 
                         minf_node, minf_val = self.OPEN.peekitem()
-                        if new_state_node.get_fVal()< minf_node.get_fVal()*epsilon:
+                        if new_state_node.get_fVal()< minf_node.get_fVal()*nepsilon:
                             self.FOCAL[new_state_node] = (new_g,new_state_node.get_state()[0])
                             if new_state_node.get_fVal()< minf_node.get_fVal():
-                                self.updateFocal(new_state_node.get_fVal(), True, epsilon) # better f_val means trim focal
+                                self.updateFocal(new_state_node.get_fVal(), True, nepsilon) # better f_val means trim focal
             
             minf_node, minf_val = self.OPEN.peekitem()
+            
             if state_node.get_fVal()< minf_node.get_fVal():
                 # we finished with the min f state so someone else needs to take the throne
-                self.updateFocal(minf_node.get_fVal(), False, epsilon) # we finished with the state 
+                #if(len(self.FOCAL)==0):
+                #    self.FOCAL[minf_node] = (minf_node.get_gVal(),minf_node.get_state()[0])
+                #print("\n just checked:({},{},{}) - F(v)={}\n".format(state_node.get_state()[0],state_node.get_state()[1],state_node.get_state()[2], state_node.get_fVal()))
+                #print("\n new min :({},{},{}) - F(v)={}\n".format(minf_node.get_state()[0],minf_node.get_state()[1],minf_node.get_state()[2], minf_node.get_fVal()))
+                self.updateFocal(minf_node.get_fVal(), False, nepsilon) # we finished with the state 
+          
+            '''
+            print("\n just checked: ")
+            self.printnode(state_node)    
+            print("\n minf is: ")
+            self.printnode(minf_node) 
+            
+            print("\nOPEN:\n")
+            for node2, f_val in self.OPEN.items():
+                self.printnode(node2)  
+                    #print("({},{},{}) - F(v)={}\n".format(node2.get_state()[0],node2.get_state()[1],node2.get_state()[2], node2.get_fVal()))
+            print("\nFOCAL\n")
+            for node3, f_val in self.FOCAL.items():
+                    self.printnode(node3)  
+                    if(node3.get_state()[0]==137 and node3.get_fVal()==29.0 and node3.get_fVal()==29.0):
+                        print("\nhere\n")
+            
+            print("-------------------------------------------------------------")'''
+
+            
                 
 
 
