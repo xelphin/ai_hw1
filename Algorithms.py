@@ -358,6 +358,7 @@ class AStarEpsilonAgent():
         if trim: # if lower f was found:
             for node, f_val in self.FOCAL.items():
                 if node.get_fVal() > newF*epsilon:
+                    
                     self.removeNodeFromHeapDict(node, self.FOCAL)
         
         else: # lowest f was removed => new larger f is now the min => open can have new focal-worthy nodes
@@ -404,7 +405,7 @@ class AStarEpsilonAgent():
 
                 minf_node, minf_val = self.OPEN.peekitem()
                 if state_node.get_fVal()< minf_node.get_fVal():
-                    self.updateFocal(state_node.get_fVal(), False, nepsilon)
+                    self.updateFocal(minf_node.get_fVal(), False, nepsilon)
 
                 continue # don't expand from terminated
 
@@ -495,6 +496,7 @@ class AStarEpsilonAgent():
                         print("\nhere\n")
             
             print("-------------------------------------------------------------")'''
+
 
             
                 
