@@ -280,6 +280,7 @@ class WeightedAStarAgent():
 
                 
             #print(f"OPEN is now: {[(open_state_node.get_state(), open_state_node.get_fVal()) for open_state_node in self.OPEN]}")
+        return ([],0,0)
 
 
 
@@ -358,8 +359,8 @@ class AStarEpsilonAgent():
         if trim: # if lower f was found:
             for node, f_val in self.FOCAL.items():
                 if node.get_fVal() > newF*epsilon:
-                    
-                    self.removeNodeFromHeapDict(node, self.FOCAL)
+                    n_curr = self.getNodeInHeapDictUsingState(node, self.FOCAL)
+                    self.removeNodeFromHeapDict(n_curr, self.FOCAL)
         
         else: # lowest f was removed => new larger f is now the min => open can have new focal-worthy nodes
             states_in_focal = [node.get_state() for node, f_val in self.FOCAL.items()]
@@ -403,6 +404,8 @@ class AStarEpsilonAgent():
                 # so everything in focal needs to stay, and there could be more 
                 # who should join focal
 
+                if(len(self.OPEN) == 0):
+                    break # no solution
                 minf_node, minf_val = self.OPEN.peekitem()
                 if state_node.get_fVal()< minf_node.get_fVal():
                     self.updateFocal(minf_node.get_fVal(), False, nepsilon)
@@ -479,23 +482,21 @@ class AStarEpsilonAgent():
                 #print("\n new min :({},{},{}) - F(v)={}\n".format(minf_node.get_state()[0],minf_node.get_state()[1],minf_node.get_state()[2], minf_node.get_fVal()))
                 self.updateFocal(minf_node.get_fVal(), False, nepsilon) # we finished with the state 
           
-            '''
-            print("\n just checked: ")
-            self.printnode(state_node)    
-            print("\n minf is: ")
-            self.printnode(minf_node) 
-            
-            print("\nOPEN:\n")
-            for node2, f_val in self.OPEN.items():
-                self.printnode(node2)  
-                    #print("({},{},{}) - F(v)={}\n".format(node2.get_state()[0],node2.get_state()[1],node2.get_state()[2], node2.get_fVal()))
-            print("\nFOCAL\n")
-            for node3, f_val in self.FOCAL.items():
-                    self.printnode(node3)  
-                    if(node3.get_state()[0]==137 and node3.get_fVal()==29.0 and node3.get_fVal()==29.0):
-                        print("\nhere\n")
-            
-            print("-------------------------------------------------------------")'''
+            '''if epsilon==0.1:
+                print("\n just checked: ")
+                self.printnode(state_node)    
+                print("\n minf is: ")
+                self.printnode(minf_node) 
+                
+                print("\nOPEN:\n")
+                for node2, f_val in self.OPEN.items():
+                    self.printnode(node2)  
+                        #print("({},{},{}) - F(v)={}\n".format(node2.get_state()[0],node2.get_state()[1],node2.get_state()[2], node2.get_fVal()))
+                print("\nFOCAL\n")
+                for node3, f_val in self.FOCAL.items():
+                        self.printnode(node3)              
+                print("-------------------------------------------------------------")'''
+        return ([],0,0)
 
 
             
