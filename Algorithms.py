@@ -238,7 +238,7 @@ class WeightedAStarAgent():
                 # new_g <-n.g() + P.COST(n.s,s)
                 new_g = state_node.get_gVal()+cost
                 # new_f <-new_g + h(s)
-                new_f = round((1-h_weight)*new_g + h_weight*heuristic_msap(new_state, env), 2)
+                new_f = (1-h_weight)*new_g + h_weight*heuristic_msap(new_state, env)
                 new_state_node = self.Node(new_state, state, new_g, new_f, state_node.get_actions()+[action], state_node.get_totalCost()+cost, terminated)
                 
                 # if s not in OPEN+CLOSED
